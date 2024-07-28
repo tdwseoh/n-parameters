@@ -10,9 +10,14 @@ execute:
 #| label: setup
 library(tidyverse)
 library(primer.data)
+library(brms)
+library(tidybayes)
+library(gtsummary)
 ```
 
 ```{r}
+#| message: false
+#| warning: false
 set.seed(9)
 
 ch10_data <- shaming |> mutate(p_00 = (primary_00 == "Yes"), p_02 = (primary_02 == "Yes"),
@@ -36,5 +41,23 @@ ch10_data |>
   scale_y_continuous(breaks = c(0, 1), labels = c("No", "Yes"))
 ```
 
-## **Summary**
-Using the results of a voting experiment in Michigan in 2006 primary election, we seek to forecast the causal effect on voter participation of sending postcards in the Texas gubernatorial general election of 2026. There is concern that data from a primary election might not generalize to a general election and that political culture in the two states differ too much to allow for data from one to enable useful forecasts in the other.
+# **Summary**
+Using the results of a voting experiment in Michigan in 2006 primary election, we seek to forecast the causal effect on voter participation of sending postcards in the Texas gubernatorial general election of 2026. There is concern that data from a primary election might not generalize to a general election and that political culture in the two states differ too much to allow for data from one to enable useful forecasts in the other. We modeled primary_06, a binary 0/1 integer variable indicating whether they voted in the 2006 primary election and what type of postcard they received. Individuals that have voted in the past, is likely to vote again.
+
+$$y_{i} = \beta_{0} + \beta_{1} age\_z + \beta_{2}male_i + \beta_{3}civic\_duty_i + \\ \beta_{4}hawthorne_i + \beta_{5}self_i + \beta_{6}neighbors_i + \\ \beta_{7}Sometimes\ vote_i + \beta_{8}Always\ vote_i + \\ \beta_{9}civic\_duty_i Sometimes\ vote_i + \beta_{10}hawthorne_i Sometimes\ vote_i + \\ \beta_{11}self_i Sometimes\ vote_i + \beta_{11}neighbors_i Sometimes\ vote_i + \\ \beta_{12}civic\_duty_i Always\ vote_i + \beta_{13}hawthorne_i Always\ vote_i + \\ \beta_{14}self_i Always\ vote_i + \beta_{15}neighbors_i Always\ vote_i + \epsilon_{i}$$
+
+```{r model, cache=TRUE}
+fit_postcard_vote <- brm(formula = voted ~ age_z + sex + treatment + voter_class + treatment*voter_class, 
+    data = ch10_data, 
+    family = gaussian(), 
+    refresh = 0,
+    silent = 2,
+    seed = 19)
+```
+
+```{r}
+fit_postcard_vote |> 
+  tbl_regression(intercept = TRUE, estimate_fun = function(x) style_sigfig(x, digits = 3))
+```
+
+
