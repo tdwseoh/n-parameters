@@ -2,25 +2,37 @@
 title: "N Parameters"
 author: "Thomas Seoh"
 format: html
+execute: 
+  echo: false
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
 ```{r}
-1 + 1
+#| label: setup
+library(tidyverse)
+library(primer.data)
 ```
 
-You can add options to executable code like this 
-
 ```{r}
-#| echo: false
-2 * 2
+set.seed(9)
+
+ch10_data <- shaming |> mutate(p_00 = (primary_00 == "Yes"), p_02 = (primary_02 == "Yes"),
+       p_04 = (primary_04 == "Yes"), g_00 = (general_00 == "Yes"),
+       g_02 = (general_02 == "Yes"), g_04 = (general_04 == "Yes"),
+civ_engage = p_00 + p_02 + p_04 + g_00 + g_02 + g_04,
+voter_class = case_when(civ_engage %in% c(5, 6) ~ "Always Vote",
+                        civ_engage %in% c(3, 4) ~ "Sometimes Vote",
+                        civ_engage %in% c(1, 2) ~ "Rarely Vote"),
+voter_class = factor(voter_class, levels = c("Rarely Vote", "Sometimes Vote", "Always Vote")), age_z = as.numeric(scale(age))) |> 
+rename(voted = primary_06) |> 
+select(voted, treatment, sex, age_z, civ_engage, voter_class) |> 
+drop_na() |> 
+slice_sample(prop = 0.1) 
+
+ch10_data |> 
+  sample_frac(0.5) |> 
+  ggplot(aes(x = civ_engage, y = voted)) + 
+  geom_jitter(alpha = 0.03, height = 0.1) + 
+  scale_x_continuous(breaks = 1:6) + 
+  scale_y_continuous(breaks = c(0, 1), labels = c("No", "Yes"))
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
